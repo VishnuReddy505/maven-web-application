@@ -1,0 +1,41 @@
+node
+ {
+  
+  def mavenHome = tool name:"maven3.6.3"
+  
+  stage("CheckOutCodeGit")
+  {
+   git credentialsId: '7171f0d8-bc09-4ef7-9b6f-415d5c32a5e3', url: 'https://github.com/VishnuReddy505/maven-web-application.git'
+ }
+ 
+ stage("Build")
+ {
+ sh "${mavenHome}/bin/mvn clean package"
+ }
+ 
+ stage("ExecuteSonarQubeReport")
+ {
+ sh "${mavenHome}/bin/mvn sonar:sonar"
+ }
+ 
+ stage("UploadArtifactsintoNexus")
+ {
+ sh "${mavenHome}/bin/mvn deploy"
+ }
+ 
+  stage("DeployAppTomcat")
+ {
+  sshagent(['8b33e9d9-524f-4147-a916-37ab9cd70878']) {
+    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war  ec2-user@13.233.136.145:/opt/apache-tomcat-9.0.50/webapps" 
+  }
+ }
+  
+ 
+ stage('EmailNotification')
+ {
+emailext body: '''Thanks
+vishnu Reddy''', subject: 'Build over..', to: 'vgummireddy@gmail.com'
+ }
+ 
+ 
+ }
