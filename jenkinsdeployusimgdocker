@@ -1,0 +1,32 @@
+node
+ {
+     def buildNumber = BUILD_NUMBER
+  stage("CheckOutCodeGit")
+  {
+   git url: 'https://github.com/VishnuReddy505/maven-web-application.git', branch: 'master'
+ }
+ stage("Build")
+ {
+       def mavenHome = tool name:"maven3.6.3"
+ sh "${mavenHome}/bin/mvn clean package"
+ }
+ stage("Build Docker Image")
+ {
+  sh "docker build -t dockerlegendroy/java-web-application:${buildNumber} ."   
+ }
+  stage("Docker login and Push")
+ {
+  sh "docker login -u dockerlegendroy -p Vishnu@789"
+  sh "docker push dockerlegendroy/java-web-application:${buildNumber}"   
+ }
+ stage("Deploy Application")
+ {
+     sshagent(['a629b341-cb12-47bf-8dc6-1c600676f33a']) {
+    sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.8.41"
+     sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.8.41 docker run -d -p 8080:8080 --name javawebappproject dockerlegendroy/java-web-application:${buildNumber}"
+     
+     }
+ }
+ 
+ 
+ }
